@@ -14,7 +14,7 @@ function createAppJwt(developerSeed, expirationDate = (0, date_fns_1.addHours)(n
     const jwt = generateUserJwt({ userSeed, developerSeed, expirationDate });
     return {
         jwt,
-        userSeed
+        userSeed,
     };
 }
 exports.createAppJwt = createAppJwt;
@@ -24,7 +24,7 @@ function generateUserJwt({ userSeed, developerSeed, expirationDate, }) {
     const payload = {
         jti: getJti(),
         iat: getIat(),
-        exp: getExp(expirationDate),
+        // exp: getExp(expirationDate), // optionally, expire
         iss: developer.getPublicKey(),
         name: "developer",
         sub: user.getPublicKey(),

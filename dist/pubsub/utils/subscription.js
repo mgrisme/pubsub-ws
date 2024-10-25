@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.unsubscribe = exports.publish = exports.subscribe = void 0;
+exports.unsubscribe = exports.publish = exports.request = exports.subscribe = exports.natsConnect = void 0;
 const nats_ws_1 = require("nats.ws");
 const authenticator_1 = require("./authenticator");
 const codec_1 = require("./codec");
@@ -20,7 +20,7 @@ function natsConnect(config, jwt, nkey) {
             servers: config.url,
             authenticator: (0, authenticator_1.createAuthenticator)(jwt, nkey),
         };
-        if (typeof window === 'undefined') {
+        if (typeof window === "undefined") {
             // We are in a Node.js environment
             Object.assign(global, { WebSocket: require("ws") });
             process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
@@ -28,11 +28,12 @@ function natsConnect(config, jwt, nkey) {
         return yield (0, nats_ws_1.connect)(options);
     });
 }
+exports.natsConnect = natsConnect;
 function natsSubscribe({ connection, onMessages, onError, subject, }) {
     const subscription = connection.subscribe(subject, {
         callback: (err, msg) => {
             if (err) {
-                onError('NATS subscription error.', err);
+                onError("NATS subscription error.", err);
                 return;
             }
             const message = (0, codec_1.decodeMessage)(msg);
@@ -41,21 +42,42 @@ function natsSubscribe({ connection, onMessages, onError, subject, }) {
     });
     return subscription;
 }
-function subscribe({ onMessages, onError, jwt, nkey, subject, config = config_1.natsStaticConfig }) {
+function subscribe({ onMessages, onError, jwt, nkey, subject, config = config_1.natsStaticConfig, }) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!config.connection) {
             try {
                 config.connection = yield natsConnect(config, jwt, nkey);
             }
             catch (err) {
-                onError('Unable to connect to NATS.', err);
+                onError("Unable to connect to NATS.", err);
                 return;
             }
         }
-        config.subscription = natsSubscribe({ connection: config.connection, onMessages, onError, subject });
+        config.subscription = natsSubscribe({
+            connection: config.connection,
+            onMessages,
+            onError,
+            subject,
+        });
     });
 }
 exports.subscribe = subscribe;
+function request({ onError, jwt, nkey, subject, data, config = config_1.natsStaticConfig, }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!config.connection) {
+            try {
+                config.connection = yield natsConnect(config, jwt, nkey);
+            }
+            catch (err) {
+                onError("Unable to connect to NATS.", err);
+                return;
+            }
+        }
+        const response = yield config.connection.request(subject, data);
+        return response;
+    });
+}
+exports.request = request;
 function publish(subject, data, config = config_1.natsStaticConfig) {
     return __awaiter(this, void 0, void 0, function* () {
         if (config.connection) {
