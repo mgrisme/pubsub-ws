@@ -3,14 +3,14 @@ import { Message } from '../pubsub';
 import {NatsConfig} from "../pubsub/types";
 import {createAppJwt} from "../pubsub/userJwt";
 
-const natsWsUrl = 'wss://url.com:443';
-const accessToken = 'SAAGNJOZTRPYYXG2NJX3ZNGXYUSDYX2BWO447W3SHG6XQ7U66RWHQ3JUXM';
-const exampleSubscribeSubject = 'example.sub.subject';
+const natsWsUrl = "wss://127.0.0.1";
+const accessToken = 'EXAMPLE_ACCESS_TOKEN';
+const exampleSubscribeSubject = "publisher.example.subject";
 
 var config: NatsConfig;
 
 async function printData(message: Message) {
-    console.log('Received message on', exampleSubscribeSubject, 'subject');
+    console.log('Received message:', message.data);
 }
 
 const onMessages = async (messages: Message[]) => {

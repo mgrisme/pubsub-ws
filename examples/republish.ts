@@ -1,19 +1,22 @@
-import { subscribe, publish } from '../pubsub';
+import { subscribe, publish, natsConnect } from '../pubsub';
 import { Message } from '../pubsub';
 import {NatsConfig} from "../pubsub/types";
 
-const natsWsUrl = 'wss://url.com:443';
-const userCredsJWT = 'USER_JWT';
-const userCredsSeed = 'CREDS_SEED';
-const exampleSubscribeSubject = 'example.sub.subject';
-const examplePublishSubject = 'example.pub.subject';
+const natsWsUrl = "wss://127.0.0.1";
+const subscriberUserCredsJWT = 'USER_JWT';
+const subscriberUserCredsSeed = 'EXAMPLE_ACCESS_TOKEN';
+const publisherUserCredsJWT = 'USER_JWT';
+const publisherUserCredsSeed = 'EXAMPLE_ACCESS_TOKEN';
+const exampleSubscribeSubject = 'synternet.example.subject';
+const examplePublishSubject = 'publisher.example.subject';
 
-var config: NatsConfig;
+var subscriberConfig: NatsConfig;
+var publisherConfig: NatsConfig;
 
 async function republishData(message: Message) {
-    console.log('Received message on', exampleSubscribeSubject, 'subject');
-    publish(examplePublishSubject, message.data, config);
-    console.log('Published message on', examplePublishSubject, 'subject');
+    console.log('Received message on', exampleSubscribeSubject, message.data);
+    publish(examplePublishSubject, message.data, publisherConfig);
+    console.log('Published message on', examplePublishSubject, message.data);
 }
 
 const onMessages = async (messages: Message[]) => {
@@ -27,16 +30,19 @@ const onError = (text: string, error: Error) => {
 };
 
 async function main() {
-    config = { url: natsWsUrl }
+    subscriberConfig = { url: natsWsUrl }
     await subscribe({
         onMessages,
         onError,
-        jwt: userCredsJWT,
-        nkey: userCredsSeed,
-        config: config,
+        jwt: subscriberUserCredsJWT,
+        nkey: subscriberUserCredsSeed,
+        config: subscriberConfig,
         subject: exampleSubscribeSubject
     });
-    console.log('Connected to NATS server.');
+    console.log('Subscriber connected to NATS server.');
+    const publishConnection = await natsConnect({ url: natsWsUrl }, publisherUserCredsJWT, publisherUserCredsSeed);
+    publisherConfig = { url: natsWsUrl, connection: publishConnection }
+    console.log('Publisher connected to NATS server.');
 }
 
 main();
